@@ -6,7 +6,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-RUN npm run build
+RUN npm run build && cp src/db/schema.sql dist/db/schema.sql
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
 FROM node:20-alpine
