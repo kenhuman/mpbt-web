@@ -1,13 +1,16 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Pool } from 'pg';
 import { PG_POOL } from '../db/db.module';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 export interface UserListRow {
@@ -31,6 +34,30 @@ export class UsersService {
        ORDER BY created_at ASC`,
     );
     return result.rows;
+  }
+
+  async createUser(dto: CreateUserDto): Promise<UserListRow> {
+    const existing = await this.pool.query(
+      'SELECT id FROM accounts WHERE lower(username) = lower($1)',
+      [dto.username],
+    );
+    if (existing.rowCount && existing.rowCount > 0)
+      throw new ConflictException('Username is already taken');
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+    try {
+      const result = await this.pool.query<UserListRow>(
+        `INSERT INTO accounts (username, password_hash, email, is_admin)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, username, email, is_admin, suspended, banned, created_at`,
+        [dto.username, passwordHash, dto.email ?? null, dto.isAdmin ?? false],
+      );
+      return result.rows[0];
+    } catch (err) {
+      if ((err as { code?: string }).code === '23505')
+        throw new ConflictException('Username is already taken');
+      throw new InternalServerErrorException('User creation failed');
+    }
   }
 
   async updateUser(
