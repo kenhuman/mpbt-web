@@ -45,6 +45,8 @@ services:
     environment:
       # Internal Docker network URL — Next.js rewrites proxy /api/* here server-side.
       - API_URL=http://api:3001
+      # Public game server address sent to launcher clients via /api/client-config.
+      - GAME_SERVER=${SERVER_HOST}:2000
     restart: unless-stopped
 
   api:
