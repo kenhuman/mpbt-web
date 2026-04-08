@@ -14,6 +14,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+# API_URL is used by next.config.ts rewrites() at build time.
+# In production the API runs on the internal Docker network as http://api:3001.
+ARG API_URL=http://api:3001
+ENV API_URL=${API_URL}
 RUN npm run build
 
 # ── Runtime ───────────────────────────────────────────────────────────────────

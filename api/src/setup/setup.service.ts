@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Pool } from 'pg';
@@ -10,6 +11,7 @@ import { PG_POOL } from '../db/db.module';
 
 @Injectable()
 export class SetupService {
+  private readonly logger = new Logger(SetupService.name);
   constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
 
   async needsSetup(): Promise<boolean> {
@@ -35,7 +37,8 @@ export class SetupService {
          VALUES ($1, $2, $3, TRUE)`,
         [username, passwordHash, email],
       );
-    } catch {
+    } catch (err) {
+      this.logger.error('createFirstAdmin INSERT failed', err);
       throw new InternalServerErrorException('Failed to create admin account.');
     }
     return { username };

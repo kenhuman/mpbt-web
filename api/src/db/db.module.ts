@@ -12,9 +12,14 @@ class MigrateService implements OnModuleInit {
   constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
 
   async onModuleInit() {
-    const sql = readFileSync(join(__dirname, 'schema.sql'), 'utf-8');
-    await this.pool.query(sql);
-    this.logger.log('Schema migration applied successfully');
+    try {
+      const sql = readFileSync(join(__dirname, 'schema.sql'), 'utf-8');
+      await this.pool.query(sql);
+      this.logger.log('Schema migration applied successfully');
+    } catch (err) {
+      this.logger.error('Schema migration FAILED', err);
+      throw err;
+    }
   }
 }
 
