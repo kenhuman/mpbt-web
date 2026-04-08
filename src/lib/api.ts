@@ -6,6 +6,7 @@ export interface Article {
   body?: string;
   author_id: number;
   author_username: string;
+  published: boolean;
   published_at: string;
   created_at: string;
 }
@@ -43,8 +44,12 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
 export const api = {
   getArticles: (limit = 5) => apiFetch<Article[]>(`/api/articles?limit=${limit}`),
   getArticle: (slug: string) => apiFetch<Article>(`/api/articles/${slug}`),
-  createArticle: (data: { title: string; summary: string; body: string }) =>
+  getAdminArticles: () => apiFetch<Article[]>('/api/articles/admin'),
+  createArticle: (data: { title: string; summary: string; body: string; published: boolean }) =>
     apiFetch<Article>('/api/articles', { method: 'POST', body: JSON.stringify(data) }),
+  updateArticle: (id: number, data: { title?: string; summary?: string; body?: string; published?: boolean }) =>
+    apiFetch<Article>(`/api/articles/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteArticle: (id: number) => apiFetch<void>(`/api/articles/${id}`, { method: 'DELETE' }),
 
   register: (data: { username: string; password: string; email: string }) =>
     apiFetch<{ username: string }>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),

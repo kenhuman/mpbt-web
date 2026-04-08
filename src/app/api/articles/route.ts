@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Route handler (takes priority over the /api/* rewrite in next.config.ts).
-// Fetches articles server-side from NestJS so the response returned to the
-// client has Access-Control-Allow-Origin: * rather than the NestJS-issued
-// origin, which only allows the Next.js frontend — not the Tauri launcher.
+// Route handlers take priority over the /api/* rewrite in next.config.ts.
+// We proxy both GET (public list) and POST (create — admin) here so all
+// methods for this path are handled and the rewrite does not interfere.
 
 export const dynamic = 'force-dynamic';
 
@@ -18,14 +17,27 @@ export async function GET(req: NextRequest) {
   try {
     const upstream = await fetch(url, { cache: 'no-store' });
     const data = await upstream.json();
-    return NextResponse.json(data, {
-      status: upstream.status,
-      headers: CORS,
-    });
+    return NextResponse.json(data, { status: upstream.status, headers: CORS });
   } catch {
-    return NextResponse.json({ message: 'Failed to fetch articles' }, {
-      status: 502,
-      headers: CORS,
+    return NextResponse.json({ message: 'Failed to fetch articles' }, { status: 502, headers: CORS });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.text();
+    const upstream = await fetch(`${API_URL}/articles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        cookie: req.headers.get('cookie') ?? '',
+      },
+      body,
+      cache: 'no-store',
     });
+    const data = await upstream.json().catch(() => ({}));
+    return NextResponse.json(data, { status: upstream.status });
+  } catch {
+    return NextResponse.json({ message: 'Failed to create article' }, { status: 502 });
   }
 }
