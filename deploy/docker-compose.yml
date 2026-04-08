@@ -61,6 +61,7 @@ services:
 
   game:
     image: ghcr.io/kenhuman/mpbt-server:latest
+    profiles: [game]   # opt-in: start with --profile game
     environment:
       - DATABASE_URL=${DATABASE_URL}
       # Must be the VPS public IP or hostname sent in REDIRECT packets to clients.
