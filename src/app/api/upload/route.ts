@@ -38,20 +38,24 @@ export async function POST(req: NextRequest) {
   }
 
   const file = formData.get('file');
-  if (!(file instanceof File)) {
+  // Accept Blob/File — `File extends Blob`, works across Node versions
+  if (!file || typeof file === 'string' || !(file as Blob).size) {
     return NextResponse.json({ message: 'No file provided' }, { status: 400 });
   }
+  const blob = file as Blob & { name?: string };
+  const mimeType = blob.type ?? '';
+  const fileName = blob.name ?? 'upload';
 
-  if (!ALLOWED_MIME.has(file.type)) {
+  if (!ALLOWED_MIME.has(mimeType)) {
     return NextResponse.json({ message: 'File type not allowed' }, { status: 400 });
   }
 
-  const ext = extname(file.name).toLowerCase();
+  const ext = extname(fileName).toLowerCase();
   if (!ALLOWED_EXT.has(ext)) {
     return NextResponse.json({ message: 'File extension not allowed' }, { status: 400 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const buffer = Buffer.from(await blob.arrayBuffer());
   if (buffer.byteLength > MAX_BYTES) {
     return NextResponse.json({ message: 'File too large (max 8 MB)' }, { status: 413 });
   }
@@ -61,8 +65,7 @@ export async function POST(req: NextRequest) {
     await mkdir(uploadsDir, { recursive: true });
   }
 
-  const safeName = `${randomBytes(12).toString('hex')}${ext}`;
-  await writeFile(join(uploadsDir, safeName), buffer);
+  const safeName = `${randomBytes(12).toString('hex')}${ext}`;  await writeFile(join(uploadsDir, safeName), buffer);
 
   return NextResponse.json({ url: `/uploads/${safeName}` });
 }

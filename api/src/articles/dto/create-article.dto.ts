@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Length, MaxLength } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, Length, MaxLength } from 'class-validator';
 
 export class CreateArticleDto {
   @IsString()
@@ -13,4 +13,8 @@ export class CreateArticleDto {
   @IsNotEmpty()
   @MaxLength(50000)
   body: string;
+
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean;
 }
