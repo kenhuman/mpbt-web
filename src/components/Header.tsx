@@ -19,6 +19,9 @@ export default function Header() {
         MPBT
       </Link>
       <nav className="flex items-center gap-4 text-sm">
+        <Link href="/download" className="text-neutral-300 hover:text-green-400 transition-colors">
+          Download
+        </Link>
         {loading ? null : user ? (
           <>
             <Link href="/profile" className="text-neutral-300 hover:text-green-400 transition-colors">
