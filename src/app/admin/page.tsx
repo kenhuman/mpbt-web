@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
+import MarkdownEditor from '../../components/MarkdownEditor';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -74,12 +75,10 @@ export default function AdminPage() {
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-1">Body</label>
-          <textarea
+          <MarkdownEditor
             value={form.body}
-            onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
-            rows={14}
-            className="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-neutral-100 focus:outline-none focus:border-yellow-600 font-mono text-sm resize-y"
-            required
+            onChange={(v) => setForm((f) => ({ ...f, body: v }))}
+            minHeight={380}
           />
         </div>
         {error && <p className="text-red-400 text-sm">{error}</p>}
