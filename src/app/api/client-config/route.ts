@@ -8,14 +8,11 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+const CORS = { 'Access-Control-Allow-Origin': '*' };
+
 export function GET() {
   return NextResponse.json({
-    // Base URL of the NestJS API — used for auth and other API calls.
-    // In production this is the internal Docker URL rewritten by Next.js;
-    // the launcher uses the value returned here, not a hardcoded URL.
     apiUrl: (process.env.API_URL ?? 'http://localhost:3001').replace(/\/+$/, ''),
-
-    // Game server address in "host:port" form sent to clients in play.pcgi.
     gameServer: process.env.GAME_SERVER ?? '127.0.0.1:2000',
-  });
+  }, { headers: CORS });
 }
