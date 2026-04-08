@@ -34,6 +34,12 @@ export default function AdminUsersPage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
+  // Create state
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({ username: '', password: '', email: '', isAdmin: false });
+  const [createError, setCreateError] = useState('');
+  const [createSaving, setCreateSaving] = useState(false);
+
   useEffect(() => {
     if (!loading && (!user || !user.isAdmin)) router.push('/');
   }, [user, loading, router]);
@@ -81,6 +87,27 @@ export default function AdminUsersPage() {
     }
   };
 
+  const submitCreate = async () => {
+    setCreateError('');
+    setCreateSaving(true);
+    try {
+      const payload: Parameters<typeof api.createUser>[0] = {
+        username: createForm.username.trim(),
+        password: createForm.password,
+      };
+      if (createForm.email.trim()) payload.email = createForm.email.trim();
+      if (createForm.isAdmin) payload.isAdmin = true;
+      const newUser = await api.createUser(payload);
+      setUsers((prev) => [...prev, newUser]);
+      setCreating(false);
+      setCreateForm({ username: '', password: '', email: '', isAdmin: false });
+    } catch (err) {
+      setCreateError((err as Error).message || 'Creation failed.');
+    } finally {
+      setCreateSaving(false);
+    }
+  };
+
   // Quick-toggle helpers (no modal needed)
   const quickToggle = async (
     u: AdminUser,
@@ -108,9 +135,69 @@ export default function AdminUsersPage() {
         <a href="/admin" className="text-sm text-neutral-500 hover:text-neutral-300 transition-colors">
           ← Admin home
         </a>
+        <button
+          onClick={() => { setCreating((v) => !v); setCreateError(''); }}
+          className="text-sm bg-yellow-600 hover:bg-yellow-500 text-black font-bold px-3 py-1.5 rounded transition-colors"
+        >
+          {creating ? 'Cancel' : '+ Create User'}
+        </button>
       </div>
 
       {error && <p className="text-red-400 mb-4">{error}</p>}
+
+      {creating && (
+        <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-4 mb-6 space-y-4">
+          <h2 className="text-sm font-semibold text-neutral-300">New User</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-neutral-500 mb-1">Username <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                value={createForm.username}
+                onChange={(e) => setCreateForm((f) => ({ ...f, username: e.target.value }))}
+                className="w-full bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-sm text-neutral-100 focus:outline-none focus:border-yellow-600"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-neutral-500 mb-1">Password <span className="text-red-500">*</span></label>
+              <input
+                type="password"
+                value={createForm.password}
+                onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+                placeholder="••••••••"
+                className="w-full bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-sm text-neutral-100 focus:outline-none focus:border-yellow-600"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-neutral-500 mb-1">Email <span className="text-neutral-600">(optional)</span></label>
+              <input
+                type="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                className="w-full bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-sm text-neutral-100 focus:outline-none focus:border-yellow-600"
+              />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={createForm.isAdmin}
+              onChange={(e) => setCreateForm((f) => ({ ...f, isAdmin: e.target.checked }))}
+              className="accent-yellow-500"
+            />
+            <span className="text-neutral-300">Admin</span>
+          </label>
+          {createError && <p className="text-red-400 text-xs">{createError}</p>}
+          <button
+            onClick={submitCreate}
+            disabled={createSaving || !createForm.username.trim() || !createForm.password}
+            className="bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-black text-sm font-bold px-4 py-1.5 rounded transition-colors"
+          >
+            {createSaving ? 'Creating…' : 'Create User'}
+          </button>
+        </div>
+      )}
+
       {fetching && <p className="text-neutral-600 animate-pulse">Loading…</p>}
 
       {!fetching && (

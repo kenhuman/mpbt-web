@@ -67,6 +67,8 @@ export const api = {
 
   // Admin user management
   listUsers: () => apiFetch<AdminUser[]>('/api/admin/users'),
+  createUser: (data: { username: string; password: string; email?: string; isAdmin?: boolean }) =>
+    apiFetch<AdminUser>('/api/admin/users', { method: 'POST', body: JSON.stringify(data) }),
   updateUser: (
     id: number,
     data: Partial<{ email: string; password: string; isAdmin: boolean; suspended: boolean; banned: boolean }>,
