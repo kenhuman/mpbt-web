@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+api/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -16,6 +17,7 @@
 # next.js
 /.next/
 /out/
+api/dist/
 
 # production
 /build
@@ -30,8 +32,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — .env*.example files are committed as documentation templates
 .env*
+!.env*.example
+!api/.env.example
 
 # vercel
 .vercel

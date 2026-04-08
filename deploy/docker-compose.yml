@@ -1,0 +1,98 @@
+# VPS all-services compose file.
+# Place at /opt/mpbt/docker-compose.yml on the VPS.
+# Copy deploy/.env.example → /opt/mpbt/.env and fill in all values before first run.
+#
+# One-time TLS bootstrap (run on the VPS in /opt/mpbt/):
+#   1.  cp deploy/nginx/init.conf nginx/default.conf
+#       docker compose up -d nginx certbot
+#   2.  docker compose exec certbot certbot certonly --webroot \
+#         -w /var/www/certbot \
+#         -d play-solaris.com -d api.play-solaris.com \
+#         --email YOUR@EMAIL.COM --agree-tos --no-eff-email
+#   3.  cp deploy/nginx/play-solaris.conf nginx/default.conf
+#       docker compose exec nginx nginx -s reload
+#
+# mechdata/ and MPBT.MSG must be placed in /opt/mpbt/ manually (proprietary files).
+# The game service will exit immediately if they are absent.
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d:ro
+      - certbot-etc:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    depends_on:
+      - web
+      - api
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    # Attempt renewal every 12 h; certbot skips if cert is not near expiry.
+    entrypoint: >
+      /bin/sh -c "trap exit TERM;
+      while :; do certbot renew --quiet; sleep 12h & wait $${!}; done"
+
+  web:
+    image: ghcr.io/kenhuman/mpbt-web:latest
+    environment:
+      # Internal Docker network URL — Next.js rewrites proxy /api/* here server-side.
+      - API_URL=http://api:3001
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/kenhuman/mpbt-api:latest
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=https://play-solaris.com
+      - PORT=3001
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  game:
+    image: ghcr.io/kenhuman/mpbt-server:latest
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      # Must be the VPS public IP or hostname sent in REDIRECT packets to clients.
+      - SERVER_HOST=${SERVER_HOST}
+    volumes:
+      # Proprietary game data — place these files in /opt/mpbt/ on the VPS.
+      - ./mechdata:/app/mechdata:ro
+      - ./MPBT.MSG:/app/MPBT.MSG:ro
+    ports:
+      - "2000:2000"
+      - "2001:2001"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  certbot-etc:
+  certbot-www:

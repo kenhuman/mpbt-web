@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "api: npm install",
+			"type": "shell",
+			"command": "npm install --no-audit --no-fund",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "api: npm install",
+			"type": "shell",
+			"command": "npm install --no-audit --no-fund",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}
